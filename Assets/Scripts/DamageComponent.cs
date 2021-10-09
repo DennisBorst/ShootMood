@@ -13,7 +13,8 @@ public class DamageComponent : MonoBehaviour {
     [SerializeField] private List<TagSO> hittableTags;
 
     private void OnTriggerEnter(Collider other) {
-        if (!canDamage || !other.TryGetComponent(out TagsComponent tagComponent) || !tagComponent.ContainsAnyTag(hittableTags) || other.TryGetComponent(out HealthComponent healthComponent)) { return; }
+        if (!canDamage || !other.TryGetComponent(out TagsComponent tagComponent) || !tagComponent.ContainsAnyTag(hittableTags) || !other.TryGetComponent(out HealthComponent healthComponent)) { return; }
+
 
         healthComponent.Damage(damageAmount);
         DamagedOtherCollider.Invoke(other);
