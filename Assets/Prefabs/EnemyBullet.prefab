@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 6215967144896204535}
   - component: {fileID: 794399840104252072}
   - component: {fileID: 2479128068393028439}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: EnemyBullet
   m_TagString: EnemyBullet
   m_Icon: {fileID: 0}
@@ -145,7 +145,7 @@ GameObject:
   - component: {fileID: 7789547762203821952}
   - component: {fileID: 6488463561795333157}
   - component: {fileID: 6198475095390244869}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Particle System
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4960,7 +4960,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7247813896492342691}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: hitPlayer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4992,7 +4992,7 @@ GameObject:
   - component: {fileID: 7358746766628140804}
   - component: {fileID: 2299999736546577722}
   - component: {fileID: 753768093086133963}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}

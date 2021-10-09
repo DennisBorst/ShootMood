@@ -4,6 +4,13 @@ using DG.Tweening;
 public class Bullet : MonoBehaviour {
 
     public Vector3 Offset => offset;
+    public bool IsFired {
+        get => isFired;
+        private set {
+            damageComponent.CanDamage = value;
+            isFired = value;
+        } 
+    }
 
     [Header("Settings")]
     [SerializeField] private float speed;
@@ -25,14 +32,6 @@ public class Bullet : MonoBehaviour {
     [SerializeField] private GameObject fireParticle;
     [SerializeField] private new Rigidbody rigidbody;
     [SerializeField] private DamageComponent damageComponent;
-
-    private bool IsFired {
-        get => isFired;
-        set {
-            damageComponent.CanDamage = value;
-            isFired = value;
-        } 
-    }
 
     private float currentDuration;
     private bool isFired;
