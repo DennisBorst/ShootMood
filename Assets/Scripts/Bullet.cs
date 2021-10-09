@@ -1,118 +1,120 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using DG.Tweening;
 
-public class Bullet : MonoBehaviour, IFire
-{
-    [SerializeField] private float force;
+public class Bullet : MonoBehaviour {
+
+    public Vector3 Offset => offset;
+
+    [Header("Settings")]
+    [SerializeField] private float speed;
     [SerializeField] private float maxDuration;
     [Space]
-    [SerializeField] private float screenTop;
-    [SerializeField] private float screenBottom;
-    [SerializeField] private float screenLeft;
-    [SerializeField] private float screenRight;
+    [SerializeField] private float extraRadius;
     [SerializeField] private Vector3 offset;
-    [Space]
-    [SerializeField] private GameObject hitEnemyParticle;
-    [SerializeField] private GameObject idleParticle;
-    [SerializeField] private GameObject fireParticle;
 
-    [Header("Sounds")]
+    [Header("Resources")]
+    [SerializeField] private GameObject hitEnemyParticle;
+    [Space]
     [SerializeField] private AudioClip pickUpBullet;
     [SerializeField] private AudioClip shootBullet;
     [SerializeField] private AudioClip hitOtherBullet;
 
-    private float currentDuration;
-    private bool fireTrue;
-    private Transform newPosition;
-    private AudioSource audioSource;
+    [Header("References")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private GameObject idleParticle;
+    [SerializeField] private GameObject fireParticle;
+    [SerializeField] private new Rigidbody rigidbody;
+    [SerializeField] private DamageComponent damageComponent;
 
-    private void Start()
-    {
-        currentDuration = maxDuration;
-        audioSource = GetComponent<AudioSource>();
+    private bool IsFired {
+        get => isFired;
+        set {
+            damageComponent.CanDamage = value;
+            isFired = value;
+        } 
     }
 
-    private void Update()
-    {
-        if (!fireTrue) {Switch(true); return; }
-        else { Switch(false); }
+    private float currentDuration;
+    private bool isFired;
+    private bool wasInMap = false;
 
-        transform.Translate(Vector3.forward * force * Time.deltaTime);
+    private void OnEnable() {
+        damageComponent.DamagedOtherCollider.AddListener(OnDamagedOtherCollider);
+    }
 
-        Vector3 newPos = transform.position;
-        if (transform.position.z > screenTop) { newPos.z = screenBottom; }
-        if (transform.position.z < screenBottom) { newPos.z = screenTop; }
-        if (transform.position.x > screenRight) { newPos.x = screenLeft; }
-        if (transform.position.x < screenLeft) { newPos.x = screenRight; }
-        transform.position = newPos;
+    private void OnDisable() {
+        damageComponent.DamagedOtherCollider.RemoveListener(OnDamagedOtherCollider);
+    }
 
-        currentDuration = Timer(currentDuration);
+    private void Start() {
+        currentDuration = maxDuration;
+    }
 
-        if (currentDuration < 0)
-        {
-            currentDuration = maxDuration;
-            fireTrue = false;
+    private void Update() {
+        if (!IsFired) { return; }
+
+        bool isInMap = Map.Instance.IsInMap(transform.position);
+
+        if (!isInMap && wasInMap) {
+            transform.position = Map.Instance.GetOppositePosition(transform.position);
+            transform.Rotate(Vector3.up, 180f);
+        }
+
+        wasInMap = isInMap;
+
+        currentDuration -= Time.deltaTime;
+
+        if (currentDuration < 0) {
+            OnDurationEnded();
         }
     }
-    public void OnUpdatePosition(Transform transform)
-    {
-        Transform newTransform = transform;
-        this.transform.position = newTransform.position + transform.TransformDirection(offset);
-        this.transform.rotation = transform.rotation;
+
+    public void OnDurationEnded() {
+        IsFired = false;
+
+        rigidbody.velocity = Vector3.zero;
+
+        currentDuration = maxDuration;
+        UpdateVisuals();
     }
 
-    public void Fire()
-    {
-        fireTrue = true;
+    public void OnEquip() {
+        rigidbody.velocity = Vector3.zero;
+        rigidbody.isKinematic = true;
+        IsFired = false;
+
+        currentDuration = maxDuration;
+
+        UpdateVisuals();
+
+        audioSource.clip = pickUpBullet;
+        audioSource.Play();
+    }
+
+    public void OnFire() {
+        rigidbody.isKinematic = false;
+        IsFired = true;
+
+        rigidbody.velocity = transform.forward * speed;
+
+        UpdateVisuals();
 
         audioSource.clip = shootBullet;
         audioSource.Play();
     }
 
-    private void OnTriggerEnter(Collider collision)
-    {
-        if(collision.gameObject.tag == "Player")
-        {
-            PlayerGun playerGun = collision.gameObject.GetComponent<PlayerGun>();
+    private void OnDamagedOtherCollider(Collider other) {
+        Instantiate(hitEnemyParticle, transform.position, hitEnemyParticle.transform.rotation);
+        TimeManager.Instance.DoSlowMotionEnemyHit();
+        Camera.main.transform.DOShakePosition(.4f, .5f, 20, 90, false, true);
 
-            if (!playerGun.fireObject)
-            {
-                playerGun.fireObject = true;
-                playerGun.iFire = this;
-
-                currentDuration = maxDuration;
-                fireTrue = false;
-
-                audioSource.clip = pickUpBullet;
-                audioSource.Play();
-            }
-        }
-
-        if (!fireTrue) { return; }
-
-        if(collision.gameObject.tag == "EnemyBullet")
-        {
-            collision.gameObject.GetComponent<EnemyBulletScript>().DestroyObject();
-            Instantiate(hitEnemyParticle, transform.position, hitEnemyParticle.transform.rotation);
-            TimeManager.Instance.DoSlowMotionEnemyHit();
-            Camera.main.transform.DOShakePosition(.4f, .5f, 20, 90, false, true);
-
-            audioSource.clip = hitOtherBullet;
-            audioSource.Play();
-        }
+        audioSource.clip = hitOtherBullet;
+        audioSource.Play();
     }
 
-    private void Switch(bool on)
-    {
-        idleParticle.SetActive(on);
-        fireParticle.SetActive(!on);
+    private void UpdateVisuals() {
+        idleParticle.SetActive(!IsFired);
+        fireParticle.SetActive(IsFired);
     }
 
-    private float Timer(float timer)
-    {
-        timer -= Time.deltaTime;
-        return timer;
-    }
 }

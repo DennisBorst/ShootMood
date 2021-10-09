@@ -1,43 +1,38 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class PlayerGun : MonoBehaviour
-{
+public class PlayerGun : MonoBehaviour {
+
+    public bool HasBullet => equippedBullet != null;
+
     [SerializeField] private Transform firePoint;
-    //public GameObject bullet;
 
-    [HideInInspector] public bool fireObject = false;
-    public IFire iFire;
+    public Bullet equippedBullet;
 
-    private void Update()
-    {
+    public void Equip(Bullet bullet) {
+        equippedBullet = bullet;
+
+        bullet.transform.SetParent(firePoint);
+        bullet.transform.localPosition = bullet.Offset;
+        bullet.transform.localRotation = Quaternion.identity;
+
+        bullet.OnEquip();
+    }
+
+    private void Update() {
+        if (!HasBullet) { return; }
         CheckInput();
     }
 
-    private void CheckInput()
-    {
-        if (!fireObject) { return; }
-
-        if (CanShoot())
-        {
-            Debug.Log("Able To Shoot");
-            iFire.OnUpdatePosition(firePoint);
-
-            if (Input.GetKeyDown(KeyCode.Mouse0))
-            {
-                Debug.Log("Shooting");
-
-                //Shooting
-                fireObject = false;
-                iFire.Fire();
-                iFire = null;
-            }
+    private void CheckInput() {
+        if (Input.GetKeyDown(KeyCode.Mouse0)) {
+            Fire();
         }
     }
 
-    public bool CanShoot()
-    {
-        return iFire != null;
+    private void Fire() {
+        equippedBullet.transform.SetParent(null, true);
+        equippedBullet.OnFire();
+        equippedBullet = null;
     }
+
 }

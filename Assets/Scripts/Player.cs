@@ -1,65 +1,73 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class Player : MonoBehaviour
-{
+public class Player : MonoBehaviour {
+
     [SerializeField] private float movementSpeed;
-    [SerializeField] private int health;
     [SerializeField] private GameObject playerObject;
+    [SerializeField] private new Rigidbody rigidbody;
+    [SerializeField] private PlayerGun gun;
+    [SerializeField] private HealthComponent healthComponent;
 
-    private CharacterController characterController;
     private Camera mainCamera;
     private AudioSource audioSource;
 
-    private void Awake()
-    {
-        characterController = GetComponent<CharacterController>();
-        mainCamera = FindObjectOfType<Camera>();
+    private Plane groundPlane;
+
+    private void OnEnable() {
+        healthComponent.HealthChanged.AddListener(OnHealthChanged);
+        healthComponent.NoHealthLeft.AddListener(OnDeath);
+    }
+
+    private void OnDisable() {
+        healthComponent.HealthChanged.RemoveListener(OnHealthChanged);
+        healthComponent.NoHealthLeft.RemoveListener(OnDeath);
+    }
+
+    private void Awake() {
+        groundPlane = new Plane(Vector3.up, Vector3.zero);
+
+        mainCamera = Camera.main;
         audioSource = GetComponent<AudioSource>();
     }
 
-    private void Update()
-    {
+    private void Update() {
+        if (TimeManager.Instance.timeStopped) { return; }
+        LookAtMouse();
+    }
+
+    private void FixedUpdate() {
         if (TimeManager.Instance.timeStopped) { return; }
         Movement();
     }
-    private void Movement()
-    {
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
 
-        Vector3 move = transform.right * x + transform.forward * z;
-        Vector3.Normalize(move);
-        characterController.Move(move * movementSpeed * Time.deltaTime);
+    private void OnTriggerEnter(Collider other) {
+        if (!gun.HasBullet && other.TryGetComponent(out Bullet bullet)) {
+            gun.Equip(bullet);
+        }
+    }
 
+    private void Movement() {
+        Vector3 inputDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+        inputDirection = inputDirection.sqrMagnitude > 1 ? inputDirection.normalized : inputDirection;
+        rigidbody.velocity = inputDirection * movementSpeed;
+    }
+
+    private void LookAtMouse() {
         Ray cameraRay = mainCamera.ScreenPointToRay(Input.mousePosition);
-        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-        float rayLength;
-
-        if (groundPlane.Raycast(cameraRay, out rayLength))
-        {
+        if (groundPlane.Raycast(cameraRay, out float rayLength)) {
             Vector3 pointToLook = cameraRay.GetPoint(rayLength);
-            playerObject.transform.LookAt(new Vector3(pointToLook.x, playerObject.transform.position.y, pointToLook.z));
+            transform.LookAt(new Vector3(pointToLook.x, transform.position.y, pointToLook.z));
         }
     }
 
-    public void Damage()
-    {
-        Debug.Log("Damaged");
-        health--;
+    private void OnHealthChanged(int currentHealth) {
         audioSource.Play();
-        UIManager.Instance.UpdateHealth(health);
-
-        if (health <= 0)
-        {
-            Die();
-        }
+        UIManager.Instance.UpdateHealth(currentHealth);
     }
 
-    public void Die()
-    {
+    private void OnDeath() {
         playerObject.SetActive(false);
         GameManager.Instance.GameOver();
     }
+
 }
