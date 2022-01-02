@@ -39,24 +39,25 @@ public class EnemyBullet : MonoBehaviour
     }
 
     private void Update() {
-        cooldown = Mathf.Clamp(cooldown - Time.deltaTime, 0, Mathf.Infinity);
+        UpdateVelocity();
+        //cooldown = Mathf.Clamp(cooldown - Time.deltaTime, 0, Mathf.Infinity);
 
-        bool isInMap = Map.Instance.IsInMap(transform.position, extraRadius);
+        //bool isInMap = Map.Instance.IsInMap(transform.position, extraRadius);
 
-        if (!isInMap && wasInMap) {
-            if (cooldown <= 0) { 
-                Instantiate(impactParticle, transform.position, transform.rotation); 
-            }
-            cooldown = particleCooldown;
+        //if (!isInMap && wasInMap) {
+        //    if (cooldown <= 0) { 
+        //        Instantiate(impactParticle, transform.position, transform.rotation); 
+        //    }
+        //    cooldown = particleCooldown;
 
-            transform.position = Map.Instance.GetOppositePosition(transform.position);
-            this.transform.eulerAngles = RandomRotation();
-            UpdateVelocity();
+        //    transform.position = Map.Instance.GetOppositePosition(transform.position);
+        //    this.transform.eulerAngles = RandomRotation();
+        //    UpdateVelocity();
 
-            wasInMap = false;
-        }
+        //    wasInMap = false;
+        //}
 
-        wasInMap = isInMap;
+        //wasInMap = isInMap;
     }
 
     private void UpdateVelocity() {
